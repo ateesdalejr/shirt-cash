@@ -7,7 +7,7 @@
 </svelte:head>
 
 <main>
-	<div class="mark">shirt.cash</div>
+	<a class="mark" href="/">shirt.cash</a>
 	{#if page.status === 404}
 		<h1>this drop didn't make it.</h1>
 		<p class="sub">lost in the chat.</p>
@@ -30,8 +30,13 @@
 		max-width: 460px; margin: 0 auto; padding: 64px 20px;
 		min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
 	}
-	.mark { font-size: 14px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 32px; }
+	.mark {
+		font-size: 14px; font-weight: 700; letter-spacing: -0.03em;
+		margin-bottom: 32px; color: inherit; text-decoration: none;
+		align-self: flex-start;
+	}
 	.mark::before { content: '◆ '; color: #00ff88; }
+	.mark:hover { opacity: 0.85; }
 	h1 { font-size: 32px; font-weight: 700; line-height: 1.15; letter-spacing: -0.04em; margin: 0 0 12px; }
 	.sub {
 		font-family: 'JetBrains Mono', ui-monospace, monospace;

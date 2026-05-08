@@ -26,7 +26,7 @@
 
 <div class="container">
 	<div class="topbar">
-		<div class="mark">shirt.cash</div>
+		<a class="mark" href="/" data-sveltekit-preload-data="hover">shirt.cash</a>
 		<div class="live">DROP_LIVE</div>
 	</div>
 
@@ -101,8 +101,12 @@
 	}
 	.container { max-width: 460px; margin: 0 auto; }
 	.topbar { display: flex; justify-content: space-between; align-items: center; padding: 8px 0 20px; }
-	.mark { font-size: 16px; font-weight: 700; letter-spacing: -0.03em; }
+	.mark {
+		font-size: 16px; font-weight: 700; letter-spacing: -0.03em;
+		color: inherit; text-decoration: none;
+	}
 	.mark::before { content: '◆ '; color: #00ff88; }
+	.mark:hover { opacity: 0.85; }
 	.live {
 		font-family: 'JetBrains Mono', ui-monospace, monospace;
 		font-size: 10px; color: #00ff88; letter-spacing: 0.1em;
