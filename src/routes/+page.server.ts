@@ -53,7 +53,9 @@ export const actions: Actions = {
 					cacheControl: 'public, max-age=31536000, immutable'
 				}
 			});
-			const mockupUrl = `${env.PUBLIC_SITE_URL}/r2/${r2Key}`;
+			// Use the request origin (works on shirt-cash.pages.dev, shirt.cash, and previews)
+			// rather than env.PUBLIC_SITE_URL which is fixed in wrangler.toml.
+			const mockupUrl = `${url.origin}/r2/${r2Key}`;
 
 			// 4. D1 INSERT
 			await insertDrop(env.DB, {
