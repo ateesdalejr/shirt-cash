@@ -1,4 +1,4 @@
-import { error, redirect } from '@sveltejs/kit';
+import { error, fail, redirect, isRedirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { getDrop, incrementViewCount } from '$lib/db';
 import { stripeClient, createCheckoutSession } from '$lib/stripe';
@@ -40,22 +40,28 @@ export const load: PageServerLoad = async ({ params, platform, url }) => {
 
 export const actions: Actions = {
 	checkout: async ({ params, platform, url }) => {
-		if (!platform?.env) throw error(500, 'platform env unavailable');
+		if (!platform?.env) return fail(500, { error: 'platform env unavailable' });
 		const env = platform.env;
 
 		const drop = await getDrop(env.DB, params.id);
-		if (!drop) throw error(404, 'drop not found');
+		if (!drop) return fail(404, { error: 'drop not found' });
+		if (!env.STRIPE_SECRET_KEY) return fail(500, { error: 'STRIPE_SECRET_KEY missing' });
 
-		const stripe = stripeClient(env.STRIPE_SECRET_KEY);
-		const session = await createCheckoutSession({
-			stripe,
-			priceId: drop.stripe_price_id,
-			dropId: drop.id,
-			successUrl: `${url.origin}/s/${drop.id}?ok=1`,
-			cancelUrl: `${url.origin}/s/${drop.id}`
-		});
-
-		if (!session.url) throw error(500, 'stripe did not return a checkout URL');
-		throw redirect(303, session.url);
+		try {
+			const stripe = stripeClient(env.STRIPE_SECRET_KEY);
+			const session = await createCheckoutSession({
+				stripe,
+				priceId: drop.stripe_price_id,
+				dropId: drop.id,
+				successUrl: `${url.origin}/s/${drop.id}?ok=1`,
+				cancelUrl: `${url.origin}/s/${drop.id}`
+			});
+			if (!session.url) return fail(500, { error: 'stripe returned no checkout URL' });
+			throw redirect(303, session.url);
+		} catch (err) {
+			if (isRedirect(err)) throw err;
+			const message = err instanceof Error ? err.message : String(err);
+			return fail(500, { error: `stripe checkout failed: ${message}` });
+		}
 	}
 };

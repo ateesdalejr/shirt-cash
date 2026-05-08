@@ -2,7 +2,7 @@
 	import type { PageData } from './$types';
 	import { enhance } from '$app/forms';
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form: import('./$types').ActionData } = $props();
 	let buying = $state(false);
 
 	const formattedTimestamp = $derived(
@@ -66,7 +66,12 @@
 					buying = true;
 					return async ({ result, update }) => {
 						buying = false;
-						if (result.type !== 'redirect') await update();
+						if (result.type === 'redirect') {
+							// Stripe Checkout is external — SvelteKit's goto() can't reach it.
+							window.location.href = result.location;
+							return;
+						}
+						await update();
 					};
 				}}
 			>
@@ -74,6 +79,9 @@
 					{buying ? 'opening checkout...' : 'Buy Drop →'}
 				</button>
 			</form>
+			{#if form?.error}
+				<div class="checkout-error">{form.error}</div>
+			{/if}
 			<div class="pay-row">APPLE PAY · GOOGLE PAY · CARD</div>
 		{/if}
 	</div>
@@ -168,6 +176,15 @@
 		text-align: center; padding-top: 10px;
 		font-family: 'JetBrains Mono', ui-monospace, monospace;
 		font-size: 9px; color: #8a8a93; letter-spacing: 0.12em;
+	}
+	.checkout-error {
+		margin: 8px 18px 0;
+		padding: 10px 12px;
+		font-family: 'JetBrains Mono', ui-monospace, monospace;
+		font-size: 11px;
+		color: #ff6e6e;
+		border-left: 2px solid #ff4d4d;
+		background: #1a0a0a;
 	}
 	.thanks {
 		margin: 16px 18px 0;
