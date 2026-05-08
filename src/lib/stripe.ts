@@ -78,6 +78,38 @@ export async function verifyStripeSignature(args: {
 	return v1Sigs.some((sig) => timingSafeEqualHex(sig, expectedHex));
 }
 
+/**
+ * Look up a Stripe Price's amount + currency. Cached in the provided KV
+ * namespace for 5 minutes to keep buyer-page loads fast (~10ms KV read vs
+ * ~200ms Stripe API call). Bust the cache by deleting `price:<id>` from KV.
+ */
+export async function getStripePrice(
+	stripe: Stripe,
+	cacheKv: KVNamespace,
+	priceId: string
+): Promise<{ amountCents: number; currency: string; whole: number; cents: number }> {
+	const cacheKey = `price:${priceId}`;
+	const cached = (await cacheKv.get(cacheKey, 'json')) as { amountCents: number; currency: string } | null;
+	let amountCents: number;
+	let currency: string;
+	if (cached && typeof cached.amountCents === 'number') {
+		amountCents = cached.amountCents;
+		currency = cached.currency;
+	} else {
+		const price = await stripe.prices.retrieve(priceId);
+		if (!price.unit_amount) throw new Error(`price ${priceId} has no unit_amount`);
+		amountCents = price.unit_amount;
+		currency = price.currency;
+		await cacheKv.put(cacheKey, JSON.stringify({ amountCents, currency }), { expirationTtl: 300 });
+	}
+	return {
+		amountCents,
+		currency,
+		whole: Math.floor(amountCents / 100),
+		cents: amountCents % 100
+	};
+}
+
 function bufferToHex(buf: ArrayBuffer): string {
 	const bytes = new Uint8Array(buf);
 	let out = '';

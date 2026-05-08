@@ -14,5 +14,9 @@ export function ogDescription(args: { priceUsd: number; dropId: string; createdA
 	const daysSince = Math.floor(((args.now ?? Date.now()) - args.createdAt) / (24 * 60 * 60 * 1000));
 	const shipsIn = Math.max(0, 5 - daysSince);
 	const ships = shipsIn === 0 ? 'ships now' : `ships in ${shipsIn} day${shipsIn === 1 ? '' : 's'}`;
-	return `$${args.priceUsd.toFixed(0)} · ${args.dropId} · ${ships}`;
+	// Show whole-dollar prices as "$25", non-whole as "$19.99".
+	const priceStr = Number.isInteger(args.priceUsd)
+		? `$${args.priceUsd}`
+		: `$${args.priceUsd.toFixed(2)}`;
+	return `${priceStr} · ${args.dropId} · ${ships}`;
 }

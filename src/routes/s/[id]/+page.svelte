@@ -44,7 +44,7 @@
 
 		<div class="ticker">
 			<span class="label">PRICE</span>
-			<span class="price"><span class="small">$</span>{data.priceUsd}<span class="small">.00</span></span>
+			<span class="price"><span class="small">$</span>{data.priceWhole}<span class="small">.{String(data.priceCents).padStart(2, '0')}</span></span>
 		</div>
 
 		<div class="stats">
