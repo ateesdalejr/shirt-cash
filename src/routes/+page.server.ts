@@ -21,8 +21,13 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { nanoid } from 'nanoid';
 import type { Actions } from './$types';
-import { generateImage, ReplicateError, ReplicateTimeoutError } from '$lib/replicate';
-import { compositeMockup } from '$lib/photon';
+import {
+	generateImage,
+	composeShirtMockup,
+	ReplicateError,
+	ReplicateTimeoutError,
+	designPrompt
+} from '$lib/replicate';
 import { insertDrop, logAttempt } from '$lib/db';
 
 export const actions: Actions = {
@@ -39,25 +44,43 @@ export const actions: Actions = {
 		const dropId = nanoid(10);
 
 		try {
-			// 1. Replicate FLUX Schnell -> PNG bytes
-			const designBytes = await generateImage({ apiToken: env.REPLICATE_API_TOKEN, prompt });
+			// 1. Generate the design (clean artwork, isolated on white). This is the
+			// canonical PNG for fulfillment — the file we'd upload to Printful.
+			const designBytes = await generateImage({
+				apiToken: env.REPLICATE_API_TOKEN,
+				prompt: designPrompt(prompt)
+			});
 
-			// 2. Photon composite onto blank tee
-			const mockupBytes = await compositeMockup({ designBytes, origin: url.origin });
-
-			// 3. R2 PUT (content-addressed key, immutable cache)
-			const r2Key = `mockups/${dropId}.png`;
-			await env.MOCKUPS.put(r2Key, mockupBytes, {
+			// 2. Save the design to R2 first. We need a public URL because the
+			// compose step (nano-banana) fetches the image from a URL.
+			const designKey = `designs/${dropId}.png`;
+			await env.MOCKUPS.put(designKey, designBytes, {
 				httpMetadata: {
 					contentType: 'image/png',
 					cacheControl: 'public, max-age=31536000, immutable'
 				}
 			});
-			// Use the request origin (works on shirt-cash.pages.dev, shirt.cash, and previews)
-			// rather than env.PUBLIC_SITE_URL which is fixed in wrangler.toml.
-			const mockupUrl = `${url.origin}/r2/${r2Key}`;
+			const designUrl = `${url.origin}/r2/${designKey}`;
 
-			// 4. D1 INSERT
+			// 3. Compose mockup: pass the design image to nano-banana, ask it to
+			// place that exact image on a flat-lay t-shirt. The mockup contains
+			// the exact design that will be printed.
+			const mockupBytes = await composeShirtMockup({
+				apiToken: env.REPLICATE_API_TOKEN,
+				designImageUrl: designUrl
+			});
+
+			// 4. Save the mockup to R2.
+			const mockupKey = `mockups/${dropId}.png`;
+			await env.MOCKUPS.put(mockupKey, mockupBytes, {
+				httpMetadata: {
+					contentType: 'image/png',
+					cacheControl: 'public, max-age=31536000, immutable'
+				}
+			});
+			const mockupUrl = `${url.origin}/r2/${mockupKey}`;
+
+			// 5. D1 INSERT.
 			await insertDrop(env.DB, {
 				id: dropId,
 				prompt,
@@ -78,7 +101,7 @@ export const actions: Actions = {
 				await logAttempt(env.DB, { prompt, status: 'replicate_error', error: err.message });
 				return fail(502, { error: `image gen failed: ${err.message}` });
 			}
-			await logAttempt(env.DB, { prompt, status: 'photon_error', error: err instanceof Error ? err.message : String(err) });
+			await logAttempt(env.DB, { prompt, status: 'storage_error', error: err instanceof Error ? err.message : String(err) });
 			return fail(500, { error: 'something broke. try again.' });
 		}
 
