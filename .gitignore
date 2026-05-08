@@ -3,7 +3,7 @@ node_modules/
 .wrangler/
 build/
 dist/
-.env
+# .env is committed for PUBLIC_* defaults; .env.local stays out of git
 .env.local
 .env.*.local
 .dev.vars
@@ -17,3 +17,9 @@ test-results/
 playwright-report/
 playwright/.cache/
 coverage/
+
+# Tooling artifacts (we use bun.lock, not npm)
+package-lock.json
+.claude/
+.tmp/
+posthog-setup-report.md

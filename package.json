@@ -40,6 +40,8 @@
   "dependencies": {
     "@cf-wasm/photon": "^0.1.20",
     "nanoid": "^5.0.9",
+    "posthog-js": "^1.372.10",
+    "posthog-node": "^5.33.4",
     "replicate": "^1.0.1",
     "stripe": "^17.5.0"
   }
