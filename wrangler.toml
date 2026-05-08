@@ -1,0 +1,32 @@
+name = "shirt-cash"
+compatibility_date = "2026-05-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".svelte-kit/cloudflare"
+
+[vars]
+PUBLIC_SITE_URL = "https://shirt.cash"
+
+# Required Workers Paid Unbound for Photon WASM CPU budget (~100-500ms per composite).
+# Workers Free has a 10ms CPU limit which Photon will blow through.
+# Set in Cloudflare dashboard: Workers & Pages → shirt-cash → Settings → Compatibility → Usage Model = Unbound
+
+[[d1_databases]]
+binding = "DB"
+database_name = "shirt_cash_db"
+database_id = "b5e970cc-4b4b-4269-bc04-b25a7644ce6b"
+migrations_dir = "migrations"
+
+[[kv_namespaces]]
+binding = "STRIPE_EVENTS"
+id = "8b142dfb42da43f99e0cbfb23dad84e4"
+
+[[r2_buckets]]
+binding = "MOCKUPS"
+bucket_name = "shirt-cash-mockups"
+
+# Secrets (set via: wrangler secret put <NAME>)
+#   REPLICATE_API_TOKEN
+#   STRIPE_SECRET_KEY
+#   STRIPE_WEBHOOK_SECRET
+#   DISCORD_WEBHOOK_URL
+#   STRIPE_PRICE_ID         (one fixed price for hackathon, e.g. price_1234 for $25)
