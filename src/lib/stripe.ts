@@ -80,9 +80,13 @@ export async function verifyStripeSignature(args: {
 
 /**
  * Look up a Stripe Price's amount + currency. Cached in the provided KV
- * namespace for 5 minutes to keep buyer-page loads fast (~10ms KV read vs
- * ~200ms Stripe API call). Bust the cache by deleting `price:<id>` from KV.
+ * namespace for 60 seconds to keep buyer-page loads fast (~10ms KV read vs
+ * ~200ms Stripe API call) while making Stripe-dashboard price changes show
+ * up within a minute. Bust the cache instantly with:
+ *   bunx wrangler kv key delete --namespace-id=<STRIPE_EVENTS_NS> "price:<id>"
  */
+const PRICE_CACHE_TTL_SECONDS = 60;
+
 export async function getStripePrice(
 	stripe: Stripe,
 	cacheKv: KVNamespace,
@@ -100,7 +104,9 @@ export async function getStripePrice(
 		if (!price.unit_amount) throw new Error(`price ${priceId} has no unit_amount`);
 		amountCents = price.unit_amount;
 		currency = price.currency;
-		await cacheKv.put(cacheKey, JSON.stringify({ amountCents, currency }), { expirationTtl: 300 });
+		await cacheKv.put(cacheKey, JSON.stringify({ amountCents, currency }), {
+			expirationTtl: PRICE_CACHE_TTL_SECONDS
+		});
 	}
 	return {
 		amountCents,
