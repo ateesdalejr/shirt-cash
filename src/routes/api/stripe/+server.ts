@@ -41,7 +41,6 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 	if (!sig) return json({ ok: false, error: 'missing signature' }, { status: 400 });
 
 	const rawBody = await request.text();
-
 	const valid = await verifyStripeSignature({
 		rawBody,
 		signatureHeader: sig,
