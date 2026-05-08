@@ -16,7 +16,8 @@
     "format": "prettier --write .",
     "deploy": "vite build && wrangler pages deploy .svelte-kit/cloudflare",
     "db:migrate:local": "wrangler d1 migrations apply shirt_cash_db --local",
-    "db:migrate:remote": "wrangler d1 migrations apply shirt_cash_db --remote"
+    "db:migrate:remote": "wrangler d1 migrations apply shirt_cash_db --remote",
+    "cache:bust": "./scripts/bust-price-cache.sh"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250109.0",
