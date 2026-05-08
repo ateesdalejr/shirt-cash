@@ -33,7 +33,7 @@ import type Stripe from 'stripe';
 
 const STRIPE_EVENT_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days = Stripe max retry window
 
-export const POST: RequestHandler = async ({ request, platform }) => {
+export const POST: RequestHandler = async ({ request, platform, url }) => {
 	if (!platform?.env) return json({ ok: false, error: 'platform env' }, { status: 500 });
 	const env = platform.env;
 
@@ -93,10 +93,15 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 		.first<{ prompt: string; mockup_url: string }>();
 
 	if (drop) {
+		// Design source URL follows the convention `<origin>/r2/designs/<id>.png`
+		// (set in the form action). Derived here from the request origin so it
+		// works on shirt.cash, shirt-cash.pages.dev, and previews.
+		const designUrl = `${url.origin}/r2/designs/${dropId}.png`;
 		const payload = formatOrderMessage({
 			dropId,
 			prompt: drop.prompt,
 			mockupUrl: drop.mockup_url,
+			designUrl,
 			priceUsd,
 			customerEmail,
 			shippingName,

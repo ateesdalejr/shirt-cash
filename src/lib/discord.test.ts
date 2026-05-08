@@ -5,6 +5,7 @@ const baseArgs = {
 	dropId: 'drop_xkj8mn2',
 	prompt: 'a sad raccoon eating a hot pocket at 3am',
 	mockupUrl: 'https://shirt.cash/r2/mockups/drop_xkj8mn2.png',
+	designUrl: 'https://shirt.cash/r2/designs/drop_xkj8mn2.png',
 	priceUsd: 25,
 	customerEmail: 'buyer@example.com',
 	shippingName: 'Jane Doe',
@@ -25,13 +26,20 @@ describe('formatOrderMessage', () => {
 		expect(out.embeds[0].image).toEqual({ url: baseArgs.mockupUrl });
 	});
 
-	it('includes price, sold count, email, and shipping address as fields', () => {
+	it('includes a second embed with the design source for Printful', () => {
+		const out = formatOrderMessage(baseArgs);
+		expect(out.embeds).toHaveLength(2);
+		expect(out.embeds[1].image).toEqual({ url: baseArgs.designUrl });
+	});
+
+	it('includes price, sold count, email, shipping address, and design source as fields', () => {
 		const out = formatOrderMessage(baseArgs);
 		const fields = (out.embeds[0].fields as Array<{ name: string; value: string }>).map((f) => f.name);
 		expect(fields).toContain('Price');
 		expect(fields).toContain('Sold (total)');
 		expect(fields).toContain('Email');
 		expect(fields).toContain('Ship to');
+		expect(fields).toContain('Design source');
 	});
 
 	it('renders the prompt as a quoted description', () => {

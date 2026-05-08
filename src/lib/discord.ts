@@ -7,6 +7,7 @@ export type DiscordOrderArgs = {
 	dropId: string;
 	prompt: string;
 	mockupUrl: string;
+	designUrl: string;
 	priceUsd: number;
 	customerEmail: string;
 	shippingName: string;
@@ -20,7 +21,7 @@ export function formatOrderMessage(args: DiscordOrderArgs): {
 	embeds: Array<Record<string, unknown>>;
 } {
 	const content = `🛍️  **REVIEW BEFORE FULFILLING**  ·  ${args.dropId}`;
-	const embed = {
+	const orderEmbed = {
 		title: `Drop sold — ${args.dropId}`,
 		description: `> ${truncate(args.prompt, 280)}`,
 		color: 0x00ff88,
@@ -34,12 +35,23 @@ export function formatOrderMessage(args: DiscordOrderArgs): {
 				name: 'Stripe session',
 				value: `[open in Stripe →](${args.stripeSessionUrl})`,
 				inline: false
+			},
+			{
+				name: 'Design source',
+				value: `[download PNG →](${args.designUrl})`,
+				inline: false
 			}
 		],
-		footer: { text: 'Review the design, then paste into Printful.' },
 		timestamp: new Date().toISOString()
 	};
-	return { content, embeds: [embed] };
+	// Second embed renders the design source full-size so you can right-click
+	// → save → upload to Printful without leaving Discord.
+	const designEmbed = {
+		title: 'Print this',
+		description: 'design source — right-click → save image → upload to Printful',
+		image: { url: args.designUrl }
+	};
+	return { content, embeds: [orderEmbed, designEmbed] };
 }
 
 export type SendResult = { ok: true } | { ok: false; status: number; body: string };
