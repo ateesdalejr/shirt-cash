@@ -5,6 +5,11 @@ pages_build_output_dir = ".svelte-kit/cloudflare"
 
 [vars]
 PUBLIC_SITE_URL = "https://shirt.cash"
+# Public Turnstile site key (safe to commit). Set up at:
+#   https://dash.cloudflare.com/?to=/:account/turnstile
+# Leave empty until Turnstile is set up; the form action skips verification when
+# either TURNSTILE_SITE_KEY or TURNSTILE_SECRET_KEY is missing.
+TURNSTILE_SITE_KEY = ""
 
 # Required Workers Paid Unbound for Photon WASM CPU budget (~100-500ms per composite).
 # Workers Free has a 10ms CPU limit which Photon will blow through.
@@ -24,9 +29,10 @@ id = "8b142dfb42da43f99e0cbfb23dad84e4"
 binding = "MOCKUPS"
 bucket_name = "shirt-cash-mockups"
 
-# Secrets (set via: wrangler secret put <NAME>)
+# Secrets (set via: wrangler pages secret put <NAME> --project-name=shirt-cash)
 #   REPLICATE_API_TOKEN
 #   STRIPE_SECRET_KEY
 #   STRIPE_WEBHOOK_SECRET
 #   DISCORD_WEBHOOK_URL
 #   STRIPE_PRICE_ID         (one fixed price for hackathon, e.g. price_1234 for $25)
+#   TURNSTILE_SECRET_KEY    (paired with TURNSTILE_SITE_KEY in [vars] above)

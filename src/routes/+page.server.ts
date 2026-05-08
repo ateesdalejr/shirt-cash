@@ -20,7 +20,7 @@
 
 import { fail, redirect } from '@sveltejs/kit';
 import { nanoid } from 'nanoid';
-import type { Actions } from './$types';
+import type { Actions, PageServerLoad } from './$types';
 import {
 	generateImage,
 	composeShirtMockup,
@@ -29,17 +29,43 @@ import {
 	designPrompt
 } from '$lib/replicate';
 import { insertDrop, logAttempt } from '$lib/db';
+import { verifyTurnstile } from '$lib/turnstile';
+import { checkRateLimit, clientKey } from '$lib/ratelimit';
+
+// Expose the public Turnstile site key to the client so the widget can render.
+// Empty string means Turnstile isn't configured yet — widget is hidden.
+export const load: PageServerLoad = async ({ platform }) => {
+	return { turnstileSiteKey: platform?.env?.TURNSTILE_SITE_KEY ?? '' };
+};
 
 export const actions: Actions = {
 	default: async ({ request, platform, url }) => {
 		if (!platform?.env) return fail(500, { error: 'platform env unavailable' });
 		const env = platform.env;
 
+		// Per-IP rate limit (5/min). Cheapest check, runs first so abusers don't
+		// even reach Turnstile/Replicate. Uses STRIPE_EVENTS KV with an rl: prefix
+		// (different namespace than evt: dedup keys).
+		const { allowed } = await checkRateLimit(env.STRIPE_EVENTS, clientKey(request));
+		if (!allowed) return fail(429, { error: 'too many requests. give it a minute.' });
+
 		const data = await request.formData();
 		const prompt = (data.get('prompt') ?? '').toString().trim();
+		const turnstileToken = (data.get('cf-turnstile-response') ?? '').toString();
 
 		if (!prompt) return fail(400, { error: 'prompt is required' });
 		if (prompt.length > 500) return fail(400, { error: 'prompt too long (max 500 chars)' });
+
+		// Turnstile check: skipped if not configured. Once both site + secret keys
+		// are set, every submission must include a valid token.
+		if (env.TURNSTILE_SITE_KEY && env.TURNSTILE_SECRET_KEY) {
+			const ok = await verifyTurnstile({
+				secret: env.TURNSTILE_SECRET_KEY,
+				token: turnstileToken,
+				remoteIp: request.headers.get('cf-connecting-ip') ?? undefined
+			});
+			if (!ok) return fail(403, { error: 'human check failed. try refreshing the page.' });
+		}
 
 		const dropId = nanoid(10);
 

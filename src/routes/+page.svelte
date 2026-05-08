@@ -1,14 +1,17 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import type { ActionData } from './$types';
+	import type { ActionData, PageData } from './$types';
 
-	let { form }: { form: ActionData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 	let submitting = $state(false);
 </script>
 
 <svelte:head>
 	<title>shirt.cash</title>
 	<meta name="description" content="Turn a group chat joke into a shirt." />
+	{#if data.turnstileSiteKey}
+		<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+	{/if}
 </svelte:head>
 
 <main>
@@ -28,6 +31,9 @@
 	>
 		<label for="prompt">describe the shirt</label>
 		<textarea id="prompt" name="prompt" rows="3" maxlength="500" placeholder="a sad raccoon eating a hot pocket at 3am, in the style of a renaissance oil painting" required></textarea>
+		{#if data.turnstileSiteKey}
+			<div class="cf-turnstile" data-sitekey={data.turnstileSiteKey} data-theme="dark"></div>
+		{/if}
 		<button type="submit" disabled={submitting}>
 			{submitting ? 'generating...' : 'make the shirt →'}
 		</button>

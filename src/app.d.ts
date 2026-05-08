@@ -14,6 +14,9 @@ declare global {
 				STRIPE_PRICE_ID: string;
 				DISCORD_WEBHOOK_URL: string;
 				PUBLIC_SITE_URL: string;
+				// Turnstile — both optional. If either is missing, verification is skipped.
+				TURNSTILE_SITE_KEY?: string;
+				TURNSTILE_SECRET_KEY?: string;
 			};
 			cf: CfProperties;
 			ctx: ExecutionContext;
