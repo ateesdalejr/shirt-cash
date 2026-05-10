@@ -26,6 +26,16 @@ export async function getDrop(db: D1Database, id: string): Promise<Drop | null> 
 	return result ?? null;
 }
 
+export type RecentDrop = { id: string; prompt: string };
+
+export async function getRecentDrops(db: D1Database, limit = 10): Promise<RecentDrop[]> {
+	const { results } = await db
+		.prepare(`SELECT id, prompt FROM drops ORDER BY created_at DESC LIMIT ?`)
+		.bind(limit)
+		.all<RecentDrop>();
+	return results ?? [];
+}
+
 /**
  * Atomic view counter increment.
  *

@@ -1,11 +1,78 @@
 <script lang="ts">
   import { enhance } from "$app/forms";
+  import { goto } from "$app/navigation";
   import posthog from "posthog-js";
   import type { ActionData, PageData } from "./$types";
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
   let submitting = $state(false);
   let lastPrompt = $state("");
+  let promptValue = $state("");
+  let placeholderText = $state("");
+  let currentDropIndex = $state(0);
+
+  const FALLBACK_PLACEHOLDER =
+    "a sad raccoon eating a hot pocket at 3am, in the style of a renaissance oil painting";
+
+  // Recent drops drive the typewriter and the "no-text → existing shirt" jump.
+  // Falls back to a single static prompt when D1 is empty (first deploy).
+  const cycle = $derived(
+    data.recentDrops.length > 0
+      ? data.recentDrops
+      : [{ id: "", prompt: FALLBACK_PLACEHOLDER }],
+  );
+
+  $effect(() => {
+    if (cycle.length === 0) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const TYPE_MS = 45;
+    const ERASE_MS = 20;
+    const HOLD_MS = 1800;
+
+    const run = async () => {
+      // Outer loop kept by recursive setTimeout chain so it stays cancellable.
+      let i = currentDropIndex;
+      const tick = (fn: () => void, ms: number) => {
+        timer = setTimeout(() => {
+          if (cancelled) return;
+          fn();
+        }, ms);
+      };
+
+      const typeOut = (text: string, pos: number) => {
+        if (cancelled) return;
+        if (pos > text.length) {
+          tick(() => eraseOut(text, text.length), HOLD_MS);
+          return;
+        }
+        placeholderText = text.slice(0, pos);
+        tick(() => typeOut(text, pos + 1), TYPE_MS);
+      };
+
+      const eraseOut = (text: string, pos: number) => {
+        if (cancelled) return;
+        if (pos < 0) {
+          i = (i + 1) % cycle.length;
+          currentDropIndex = i;
+          tick(() => typeOut(cycle[i].prompt, 0), TYPE_MS);
+          return;
+        }
+        placeholderText = text.slice(0, pos);
+        tick(() => eraseOut(text, pos - 1), ERASE_MS);
+      };
+
+      typeOut(cycle[i].prompt, 0);
+    };
+
+    run();
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  });
 </script>
 
 <svelte:head>
@@ -26,9 +93,27 @@
 
   <form
     method="POST"
-    use:enhance={({ formData }) => {
+    onsubmit={(e) => {
+      // Empty submit → jump to the shirt currently in the typewriter, if it
+      // came from D1 (fallback has empty id).
+      if (promptValue.trim() === "") {
+        const target = cycle[currentDropIndex];
+        if (target?.id) {
+          e.preventDefault();
+          posthog.capture("recent_shirt_clicked", { drop_id: target.id });
+          goto(`/s/${target.id}`);
+        }
+      }
+    }}
+    use:enhance={({ formData, cancel }) => {
+      const prompt = (formData.get("prompt") ?? "").toString().trim();
+      if (!prompt) {
+        // onsubmit already navigated; cancel the POST.
+        cancel();
+        return;
+      }
       submitting = true;
-      lastPrompt = (formData.get("prompt") ?? "").toString().trim();
+      lastPrompt = prompt;
       posthog.capture("shirt_generation_submitted", {
         prompt_length: lastPrompt.length,
       });
@@ -51,8 +136,8 @@
       name="prompt"
       rows="3"
       maxlength="500"
-      placeholder="a sad raccoon eating a hot pocket at 3am, in the style of a renaissance oil painting"
-      required
+      placeholder={placeholderText}
+      bind:value={promptValue}
     ></textarea>
     {#if data.turnstileSiteKey}
       <div

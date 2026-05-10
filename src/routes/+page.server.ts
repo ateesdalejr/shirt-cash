@@ -28,7 +28,7 @@ import {
   ReplicateTimeoutError,
   designPrompt,
 } from "$lib/replicate";
-import { insertDrop, logAttempt } from "$lib/db";
+import { insertDrop, logAttempt, getRecentDrops } from "$lib/db";
 import { verifyTurnstile } from "$lib/turnstile";
 import { checkRateLimit, clientKey } from "$lib/ratelimit";
 import { getPostHogClient } from "$lib/server/posthog";
@@ -36,7 +36,13 @@ import { getPostHogClient } from "$lib/server/posthog";
 // Expose the public Turnstile site key to the client so the widget can render.
 // Empty string means Turnstile isn't configured yet — widget is hidden.
 export const load: PageServerLoad = async ({ platform }) => {
-  return { turnstileSiteKey: platform?.env?.TURNSTILE_SITE_KEY ?? "" };
+  const recentDrops = platform?.env?.DB
+    ? await getRecentDrops(platform.env.DB, 10)
+    : [];
+  return {
+    turnstileSiteKey: platform?.env?.TURNSTILE_SITE_KEY ?? "",
+    recentDrops,
+  };
 };
 
 export const actions: Actions = {
