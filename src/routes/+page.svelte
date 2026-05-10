@@ -10,6 +10,40 @@
   let promptValue = $state("");
   let placeholderText = $state("");
   let currentDropIndex = $state(0);
+  let loadingWord = $state("conjuring");
+
+  // Claude-flavored "thinking" verbs cycled on the button while the server
+  // grinds through Replicate. Shuffled per-submit so it doesn't always start
+  // on the same word.
+  const LOADING_WORDS = [
+    "conjuring",
+    "pondering",
+    "cogitating",
+    "ruminating",
+    "marinating",
+    "deliberating",
+    "synthesizing",
+    "percolating",
+    "noodling",
+    "manifesting",
+    "concocting",
+    "brewing",
+    "distilling",
+    "wrangling",
+    "ideating",
+    "musing",
+  ];
+
+  $effect(() => {
+    if (!submitting) return;
+    let i = Math.floor(Math.random() * LOADING_WORDS.length);
+    loadingWord = LOADING_WORDS[i];
+    const interval = setInterval(() => {
+      i = (i + 1) % LOADING_WORDS.length;
+      loadingWord = LOADING_WORDS[i];
+    }, 1200);
+    return () => clearInterval(interval);
+  });
 
   const FALLBACK_PLACEHOLDER =
     "a sad raccoon eating a hot pocket at 3am, in the style of a renaissance oil painting";
@@ -155,7 +189,14 @@
       ></div>
     {/if}
     <button type="submit" disabled={submitting}>
-      {submitting ? "generating..." : "make the shirt →"}
+      {#if submitting}
+        <span class="spinner" aria-hidden="true"></span>
+        {#key loadingWord}
+          <span class="loading-word">{loadingWord}...</span>
+        {/key}
+      {:else}
+        make the shirt →
+      {/if}
     </button>
   </form>
 
@@ -272,6 +313,36 @@
     padding: 16px;
     cursor: pointer;
     min-height: 52px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid rgba(10, 10, 12, 0.25);
+    border-top-color: #0a0a0c;
+    animation: spin 0.7s linear infinite;
+  }
+  .loading-word {
+    /* fade each new word in so the swap feels intentional, not a glitch */
+    animation: word-fade 0.25s ease;
+    font-variant-numeric: tabular-nums;
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes word-fade {
+    from {
+      opacity: 0.3;
+    }
+    to {
+      opacity: 1;
+    }
   }
   button:disabled {
     opacity: 0.6;
