@@ -4,7 +4,7 @@
 //   prompt
 //      │
 //      ▼
-//   Replicate (FLUX Schnell, 20s timeout)
+//   Replicate (Recraft V3, 30s timeout)
 //      │
 //      ▼
 //   Photon composite onto blank tee
@@ -159,7 +159,7 @@ export const actions: Actions = {
           },
         });
         await posthog.flush();
-        return fail(504, { error: "image gen timed out (>20s)" });
+        return fail(504, { error: "image gen timed out (>30s)" });
       }
       if (err instanceof ReplicateError) {
         await logAttempt(env.DB, {

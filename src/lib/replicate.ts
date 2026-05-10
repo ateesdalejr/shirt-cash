@@ -1,8 +1,12 @@
-// Replicate FLUX Schnell — prompt -> PNG bytes.
-// Plain fetch() wrapper with 20s AbortController timeout (eng review decision 1C).
+// Replicate Recraft V3 — prompt -> PNG bytes.
+// Recraft is purpose-built for graphic-design output (posters, vector art),
+// which lands closer to printable screen-print artwork than FLUX's
+// photo-leaning aesthetic. Vector_illustration style yields the bold flat
+// shapes and limited color palettes shirts want.
+// Plain fetch() wrapper with 30s AbortController timeout.
 // Failures are surfaced to the caller; the form action renders a retry button.
 
-const FLUX_SCHNELL_VERSION = 'black-forest-labs/flux-schnell';
+const DESIGN_MODEL = 'recraft-ai/recraft-v3';
 const REPLICATE_BASE = 'https://api.replicate.com/v1';
 
 /**
@@ -91,7 +95,7 @@ export async function composeShirtMockup({
 
 export class ReplicateTimeoutError extends Error {
 	constructor() {
-		super('Replicate request timed out after 20s');
+		super('Replicate request timed out after 30s');
 		this.name = 'ReplicateTimeoutError';
 	}
 }
@@ -114,7 +118,7 @@ export type GenerateInput = {
 
 export async function generateImage({ apiToken, prompt, signal }: GenerateInput): Promise<Uint8Array> {
 	const internalAbort = new AbortController();
-	const timeout = setTimeout(() => internalAbort.abort(), 20_000);
+	const timeout = setTimeout(() => internalAbort.abort(), 30_000);
 	const externalListener = () => internalAbort.abort();
 	if (signal) {
 		if (signal.aborted) internalAbort.abort();
@@ -124,19 +128,19 @@ export async function generateImage({ apiToken, prompt, signal }: GenerateInput)
 	try {
 		// Use sync API (`Prefer: wait`) so a single fetch returns the final output URL.
 		// Falls back to long-poll if generation exceeds Replicate's wait window.
-		const response = await fetch(`${REPLICATE_BASE}/models/${FLUX_SCHNELL_VERSION}/predictions`, {
+		const response = await fetch(`${REPLICATE_BASE}/models/${DESIGN_MODEL}/predictions`, {
 			method: 'POST',
 			headers: {
 				Authorization: `Bearer ${apiToken}`,
 				'Content-Type': 'application/json',
-				Prefer: 'wait=15'
+				Prefer: 'wait=25'
 			},
 			body: JSON.stringify({
 				input: {
 					prompt,
-					aspect_ratio: '1:1',
-					output_format: 'png',
-					num_outputs: 1
+					size: '1024x1024',
+					style: 'vector_illustration',
+					output_format: 'png'
 				}
 			}),
 			signal: internalAbort.signal
