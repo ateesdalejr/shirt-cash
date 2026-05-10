@@ -4,7 +4,7 @@
 //   prompt
 //      │
 //      ▼
-//   Replicate (Recraft V3, 30s timeout)
+//   Replicate (FLUX 1.1 Pro, 30s timeout)
 //      │
 //      ▼
 //   Photon composite onto blank tee

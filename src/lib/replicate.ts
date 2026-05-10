@@ -1,13 +1,11 @@
-// Replicate Recraft V3 — prompt -> PNG bytes.
-// Recraft is purpose-built for graphic-design output (posters, illustrations),
-// which lands closer to printable screen-print artwork than FLUX's
-// photo-leaning aesthetic. 2d_art_poster style yields the bold flat shapes
-// and vibrant palettes shirts want.
+// Replicate FLUX 1.1 Pro — prompt -> PNG bytes.
+// FLUX Pro renders concepts faithfully and semi-realistically, which beats
+// graphic-design models like Recraft when the goal is "the shirt actually
+// depicts the joke." Output still composites well onto a tee via nano-banana.
 // Plain fetch() wrapper with 30s AbortController timeout.
 // Failures are surfaced to the caller; the form action renders a retry button.
 
-const DESIGN_MODEL = 'recraft-ai/recraft-v3';
-const DESIGN_STYLE = 'digital_illustration/2d_art_poster';
+const DESIGN_MODEL = 'black-forest-labs/flux-1.1-pro';
 const REPLICATE_BASE = 'https://api.replicate.com/v1';
 
 /**
@@ -20,9 +18,9 @@ export function designPrompt(userPrompt: string): string {
 	return [
 		userPrompt,
 		'.',
-		'high-quality screen-print-ready artwork, isolated subject on a plain white background',
-		'bold lines, vivid colors, sharp focus, illustration, centered composition',
-		'no shirt, no garment, no person, no model, no text, no watermark'
+		'cinematic, detailed, sharp focus, centered composition,',
+		'isolated subject on a plain white background,',
+		'no shirt, no garment, no person wearing clothing, no model, no text, no watermark'
 	].join(' ');
 }
 
@@ -139,9 +137,9 @@ export async function generateImage({ apiToken, prompt, signal }: GenerateInput)
 			body: JSON.stringify({
 				input: {
 					prompt,
-					size: '1024x1024',
-					style: DESIGN_STYLE,
-					output_format: 'png'
+					aspect_ratio: '1:1',
+					output_format: 'png',
+					safety_tolerance: 5
 				}
 			}),
 			signal: internalAbort.signal
