@@ -188,6 +188,21 @@
   </section>
 {/if}
 
+<footer class="site-footer">
+  <span>by</span>
+  <a
+    href="https://x.com/divinesturgeon"
+    target="_blank"
+    rel="noopener noreferrer">@divinesturgeon</a
+  >
+  <span class="dot">·</span>
+  <a
+    href="https://linkedin.com/in/andrew-teesdale-jr"
+    target="_blank"
+    rel="noopener noreferrer">linkedin</a
+  >
+</footer>
+
 <style>
   :global(body) {
     background: #0a0a0c;
@@ -372,5 +387,30 @@
     .carousel-viewport {
       overflow-x: auto;
     }
+  }
+  .site-footer {
+    max-width: 460px;
+    margin: 0 auto;
+    padding: 0 20px 48px;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11px;
+    color: #6e6e7a;
+    letter-spacing: 0.06em;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .site-footer a {
+    color: #8a8a93;
+    text-decoration: none;
+    border-bottom: 1px solid #25252b;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .site-footer a:hover {
+    color: #00ff88;
+    border-color: #00ff88;
+  }
+  .site-footer .dot {
+    color: #3a3a42;
   }
 </style>
