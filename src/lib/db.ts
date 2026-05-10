@@ -26,11 +26,11 @@ export async function getDrop(db: D1Database, id: string): Promise<Drop | null> 
 	return result ?? null;
 }
 
-export type RecentDrop = { id: string; prompt: string };
+export type RecentDrop = { id: string; prompt: string; mockup_url: string };
 
 export async function getRecentDrops(db: D1Database, limit = 10): Promise<RecentDrop[]> {
 	const { results } = await db
-		.prepare(`SELECT id, prompt FROM drops ORDER BY created_at DESC LIMIT ?`)
+		.prepare(`SELECT id, prompt, mockup_url FROM drops ORDER BY created_at DESC LIMIT ?`)
 		.bind(limit)
 		.all<RecentDrop>();
 	return results ?? [];

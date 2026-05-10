@@ -19,7 +19,15 @@
   const cycle = $derived(
     data.recentDrops.length > 0
       ? data.recentDrops
-      : [{ id: "", prompt: FALLBACK_PLACEHOLDER }],
+      : [{ id: "", prompt: FALLBACK_PLACEHOLDER, mockup_url: "" }],
+  );
+
+  // Marquee duplicates the list once so the CSS keyframe can translate -50%
+  // and seam perfectly. Only built when there's at least 1 real drop.
+  const marquee = $derived(
+    data.recentDrops.length > 0
+      ? [...data.recentDrops, ...data.recentDrops]
+      : [],
   );
 
   $effect(() => {
@@ -159,6 +167,27 @@
   {/if}
 </main>
 
+{#if marquee.length > 0}
+  <section class="carousel" aria-label="recent drops">
+    <div class="carousel-label">recent drops</div>
+    <div class="carousel-viewport">
+      <div class="carousel-track">
+        {#each marquee as drop, i (i)}
+          <a class="card" href="/s/{drop.id}" aria-label={drop.prompt}>
+            <img
+              src={drop.mockup_url}
+              alt=""
+              loading="lazy"
+              decoding="async"
+            />
+            <span class="card-prompt">{drop.prompt}</span>
+          </a>
+        {/each}
+      </div>
+    </div>
+  </section>
+{/if}
+
 <style>
   :global(body) {
     background: #0a0a0c;
@@ -248,5 +277,100 @@
     font-size: 11px;
     color: #8a8a93;
     margin-top: 6px;
+  }
+  .carousel {
+    margin: 16px 0 64px;
+  }
+  .carousel-label {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11px;
+    color: #8a8a93;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    max-width: 460px;
+    margin: 0 auto 16px;
+    padding: 0 20px;
+  }
+  .carousel-viewport {
+    overflow: hidden;
+    /* fade edges so cards melt into the background */
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 8%,
+      black 92%,
+      transparent
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 8%,
+      black 92%,
+      transparent
+    );
+  }
+  .carousel-track {
+    display: flex;
+    gap: 16px;
+    width: max-content;
+    padding: 4px 0;
+    animation: scroll 60s linear infinite;
+  }
+  .carousel-viewport:hover .carousel-track {
+    animation-play-state: paused;
+  }
+  @keyframes scroll {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      /* gap (16) gets added once per item, so the duplicated half ends exactly
+         one gap past the original — translate by -50% lands on a seam. */
+      transform: translateX(calc(-50% - 8px));
+    }
+  }
+  .card {
+    flex: 0 0 auto;
+    width: 160px;
+    background: #16161a;
+    border: 1px solid #25252b;
+    border-radius: 4px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition:
+      border-color 0.15s ease,
+      transform 0.15s ease;
+  }
+  .card:hover {
+    border-color: #00ff88;
+    transform: translateY(-2px);
+  }
+  .card img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    background: #0a0a0c;
+  }
+  .card-prompt {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 10px;
+    line-height: 1.4;
+    color: #8a8a93;
+    padding: 8px 10px 10px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .carousel-track {
+      animation: none;
+    }
+    .carousel-viewport {
+      overflow-x: auto;
+    }
   }
 </style>
