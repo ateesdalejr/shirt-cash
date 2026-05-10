@@ -1,12 +1,13 @@
 // Replicate Recraft V3 — prompt -> PNG bytes.
-// Recraft is purpose-built for graphic-design output (posters, vector art),
+// Recraft is purpose-built for graphic-design output (posters, illustrations),
 // which lands closer to printable screen-print artwork than FLUX's
-// photo-leaning aesthetic. Vector_illustration style yields the bold flat
-// shapes and limited color palettes shirts want.
+// photo-leaning aesthetic. 2d_art_poster style yields the bold flat shapes
+// and vibrant palettes shirts want.
 // Plain fetch() wrapper with 30s AbortController timeout.
 // Failures are surfaced to the caller; the form action renders a retry button.
 
 const DESIGN_MODEL = 'recraft-ai/recraft-v3';
+const DESIGN_STYLE = 'digital_illustration/2d_art_poster';
 const REPLICATE_BASE = 'https://api.replicate.com/v1';
 
 /**
@@ -139,7 +140,7 @@ export async function generateImage({ apiToken, prompt, signal }: GenerateInput)
 				input: {
 					prompt,
 					size: '1024x1024',
-					style: 'vector_illustration',
+					style: DESIGN_STYLE,
 					output_format: 'png'
 				}
 			}),
