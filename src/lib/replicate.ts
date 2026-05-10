@@ -25,11 +25,12 @@ export function designPrompt(userPrompt: string): string {
 }
 
 /**
- * Place a design image onto a flat-lay t-shirt photo. Uses Gemini 2.5 Flash
- * Image (google/nano-banana on Replicate), which is purpose-built for
- * compositional image editing — it preserves the input design's content while
- * rendering it as a screen-printed graphic that follows the shirt's fabric
- * folds and lighting.
+ * Place a design image onto a flat-lay t-shirt photo. Uses FLUX Kontext Pro,
+ * a purpose-built image-editing model that preserves the input design while
+ * rendering it as a screen-printed graphic following the shirt's fabric folds
+ * and lighting. Replaced nano-banana (Gemini 2.5 Flash Image) which refused
+ * many edgy group-chat-joke designs on safety grounds. safety_tolerance: 6
+ * is the most permissive setting (only available when input_image is set).
  */
 export async function composeShirtMockup({
 	apiToken,
@@ -50,9 +51,9 @@ export async function composeShirtMockup({
 
 	try {
 		const composePrompt =
-			'Take the design in the input image and place it as a screen-printed graphic centered on the chest of a plain white cotton t-shirt. The output is a top-down flat-lay product photo of the t-shirt on a soft neutral light gray background, with natural fabric folds and gentle shadows. The design must match the input exactly. Sharp focus, professional product photography, no model, no person, no hanger, no logo on the shirt label.';
+			'Place this image as a screen-printed graphic centered on the chest of a plain white cotton t-shirt. Top-down flat-lay product photo of the t-shirt on a soft neutral light gray background, natural fabric folds, gentle shadows. The graphic must match the input image exactly. Sharp focus, professional product photography. No model, no person, no hanger, no logo on the shirt label.';
 
-		const response = await fetch(`${REPLICATE_BASE}/models/google/nano-banana/predictions`, {
+		const response = await fetch(`${REPLICATE_BASE}/models/black-forest-labs/flux-kontext-pro/predictions`, {
 			method: 'POST',
 			headers: {
 				Authorization: `Bearer ${apiToken}`,
@@ -62,8 +63,10 @@ export async function composeShirtMockup({
 			body: JSON.stringify({
 				input: {
 					prompt: composePrompt,
-					image_input: [designImageUrl],
-					output_format: 'png'
+					input_image: designImageUrl,
+					aspect_ratio: '1:1',
+					output_format: 'png',
+					safety_tolerance: 6
 				}
 			}),
 			signal: internalAbort.signal
