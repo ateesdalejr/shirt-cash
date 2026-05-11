@@ -54,6 +54,17 @@ export function formatOrderMessage(args: DiscordOrderArgs): {
 	return { content, embeds: [orderEmbed, designEmbed] };
 }
 
+export function formatSubscriberMessage(args: {
+	email: string;
+	dropId?: string | null;
+}): { content: string; embeds: Array<Record<string, unknown>> } {
+	const fromBit = args.dropId ? `  ·  from drop \`${args.dropId}\`` : '';
+	return {
+		content: `📩  **NEW EMAIL SIGNUP**  ·  \`${args.email}\`${fromBit}`,
+		embeds: []
+	};
+}
+
 export type SendResult = { ok: true } | { ok: false; status: number; body: string };
 
 export async function sendDiscordWebhook(webhookUrl: string, payload: ReturnType<typeof formatOrderMessage>): Promise<SendResult> {

@@ -62,6 +62,27 @@ export async function incrementSoldCount(db: D1Database, id: string): Promise<nu
 	return row?.sold_count ?? 0;
 }
 
+export async function insertSubscriber(
+	db: D1Database,
+	args: { email: string; dropId?: string | null; userAgent?: string | null }
+): Promise<{ inserted: boolean }> {
+	// Two-step (check then insert) so we can tell first-time signup from repeat
+	// — repeats shouldn't fire a Discord ping. Email is PK so the worst case
+	// here is the INSERT throws, which we catch and treat as "already exists".
+	const existing = await db.prepare(`SELECT 1 FROM subscribers WHERE email = ?`).bind(args.email).first();
+	if (existing) return { inserted: false };
+	try {
+		await db
+			.prepare(`INSERT INTO subscribers (email, drop_id, created_at, user_agent) VALUES (?, ?, ?, ?)`)
+			.bind(args.email, args.dropId ?? null, Date.now(), args.userAgent ?? null)
+			.run();
+		return { inserted: true };
+	} catch {
+		// Race: someone signed up with the same email between SELECT and INSERT.
+		return { inserted: false };
+	}
+}
+
 export async function logAttempt(
 	db: D1Database,
 	args: { prompt: string; status: 'ok' | 'replicate_timeout' | 'replicate_error' | 'photon_error' | 'storage_error'; error?: string; dropId?: string }
