@@ -18,7 +18,7 @@
 //      ▼
 //   redirect to /s/[id]
 
-import { fail, redirect } from "@sveltejs/kit";
+import { fail } from "@sveltejs/kit";
 import { nanoid } from "nanoid";
 import type { Actions, PageServerLoad } from "./$types";
 import {
@@ -198,7 +198,15 @@ export const actions: Actions = {
       return fail(500, { error: "something broke. try again." });
     }
 
-    // SvelteKit form actions throw redirects rather than returning them.
-    throw redirect(303, `/s/${dropId}`);
+    // Return the new drop so the client can show an email-capture modal that
+    // previews the mockup before navigating to /s/[id]. Client handles the
+    // final goto() after submit or skip.
+    return {
+      drop: {
+        id: dropId,
+        prompt,
+        mockupUrl: `${url.origin}/r2/mockups/${dropId}.png`,
+      },
+    };
   },
 };
