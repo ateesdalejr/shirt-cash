@@ -46,7 +46,7 @@ describe('generateImage', () => {
 		await expect(generateImage({ apiToken: 't', prompt: 'cat' })).rejects.toBeInstanceOf(ReplicateError);
 	});
 
-	it('throws ReplicateTimeoutError when the request hangs past 30s', async () => {
+	it('throws ReplicateTimeoutError when the request hangs past the step budget', async () => {
 		// Simulate AbortError directly. AbortSignal.timeout() fires DOMException 'AbortError'.
 		global.fetch = vi.fn(async (_input, init) => {
 			return new Promise((_resolve, reject) => {
@@ -61,7 +61,7 @@ describe('generateImage', () => {
 		// Attach a noop catch immediately to avoid an unhandled-rejection warning when
 		// the AbortError fires before vitest's expect.rejects assertion attaches its handler.
 		promise.catch(() => {});
-		await vi.advanceTimersByTimeAsync(30_001);
+		await vi.advanceTimersByTimeAsync(90_001);
 		await expect(promise).rejects.toBeInstanceOf(ReplicateTimeoutError);
 	});
 });

@@ -4,7 +4,7 @@
 //   prompt
 //      │
 //      ▼
-//   Replicate (FLUX 1.1 Pro, 30s timeout)
+//   Replicate (FLUX 1.1 Pro, 90s timeout w/ polling fallback)
 //      │
 //      ▼
 //   Photon composite onto blank tee
@@ -159,7 +159,7 @@ export const actions: Actions = {
           },
         });
         await posthog.flush();
-        return fail(504, { error: "image gen timed out (>30s)" });
+        return fail(504, { error: "image gen timed out — try a simpler prompt" });
       }
       if (err instanceof ReplicateError) {
         await logAttempt(env.DB, {
